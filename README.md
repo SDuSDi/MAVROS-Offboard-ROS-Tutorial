@@ -4,6 +4,7 @@
 This project contains the code for offboard control made using the ROS/MAVROS tutorial found on PX4 website's.
 
 ![image](assets/iris_pocho.png)
+![image](assets/schema.png)
 
 <!-- Do your best! I will try, README template, I will try. -->
 <!-- I hope its understandable -->
@@ -38,7 +39,7 @@ For the usage of this package, the user must follow the following steps on the d
 # Ground control station
 ./QGroundControl.AppImage
 
-# Launch of the MAVROS node with loopack IP and ROS port
+# Launch of the MAVROS node with loopback IP and ROS port
 roslaunch mavros px4.launch fcu_url:="udp://:14540@127.0.0.1:14557"
 ```
 
