@@ -45,7 +45,7 @@ roslaunch mavros px4.launch fcu_url:="udp://:14540@127.0.0.1:14557"
 The next commands are needed to start PX4 and ready Gazebo to simulate the drone. These commands should be ran in the PX4-Autopilot clone folder downloaded from dependencies.
 ```
 DONT_RUN=1 make px4_sitl_default gazebo-classic
-source ~/catkin_ws/devel/setup.bash    # (optional)
+source ~/catkin_ws/devel/setup.bash
 source Tools/simulation/gazebo-classic/setup_gazebo.bash $(pwd) $(pwd)/build/px4_sitl_default
 export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$(pwd)
 export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$(pwd)/Tools/simulation/gazebo-classic/sitl_gazebo-classic
