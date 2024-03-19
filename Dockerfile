@@ -12,46 +12,56 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # install MAVROS packages
-RUN apt-get install ros-${ROS_DISTRO}-mavros ros-${ROS_DISTRO}-mavros-extras ros-${ROS_DISTRO}-mavros-msgs
+RUN apt-get update && \
+    apt-get install -y ros-${ROS_DISTRO}-mavros ros-${ROS_DISTRO}-mavros-extras ros-${ROS_DISTRO}-mavros-msgs
 
-# build ros dependency
-RUN useradd -m -s /bin/bash random
-WORKDIR /home/random/catkin_ws/src
+# build ros dependencies
+RUN useradd -m -s /bin/bash catec
+WORKDIR /home/catec/catkin_ws/src
 RUN catkin_create_pkg mavrostutorial roscpp
-COPY . /home/random/catkin_ws/src/mavrostutorial
-RUN cd .. && source /opt/ros/$ROS_DISTRO/setup.bash && source devel/setup.bash && catkin_make
-RUN cd src
+COPY . /home/catec/catkin_ws/src/mavrostutorial
+RUN cd .. && source /opt/ros/$ROS_DISTRO/setup.bash && catkin_make && source devel/setup.bash && cd src
+
+# install vim, terminator, tmux and tmuxinator
+RUN apt-get update && \
+    apt-get install -y vim && \
+    apt-get install -y tmux rubygems && \
+    gem install thor -v 1.2.2 && \
+    gem install tmuxinator -v 1.1.5
 
 # install PX4 and dependencies
-RUN git clone https://github.com/PX4/PX4-Autopilot.git --recursive
+WORKDIR /home/catec
+RUN apt install -y git-all && \
+    git clone https://github.com/PX4/PX4-Autopilot.git --recursive
 
 # setup of PX4 on Ubuntu for simulation purposes
-RUN bash ./PX4-Autopilot/Tools/setup/ubuntu.sh
-
-# commands for PX4
-RUN DONT_RUN=1 make px4_sitl_default gazebo-classic
-RUN source ~/catkin_ws/devel/setup.bash && \
-    source Tools/simulation/gazebo-classic/setup_gazebo.bash $(pwd) $(pwd)/build/px4_sitl_default
-RUN export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$(pwd)
-RUN export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$(pwd)/Tools/simulation/gazebo-classic/sitl_gazebo-classic
+RUN bash /home/catec/PX4-Autopilot/Tools/setup/ubuntu.sh
 
 # install geographic datasets
-RUN wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh
-RUN bash ./install_geographiclib_datasets.sh  
+RUN wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh && \
+    bash ./install_geographiclib_datasets.sh  
 
-# # ready QGroundcontrol
-# RUN chmod +x ./QGroundControl.AppImage  
+# install QGroundControl
+RUN wget https://s3-us-west-2.amazonaws.com/qgroundcontrol/latest/QGroundControl.AppImage && \
+    chmod +x QGroundControl.AppImage
 
-##############################
+# install QGroundControl dependencies
+RUN apt-get install -y libpulse-mainloop-glib0
 
-# # start QGroundControl
-# RUN ./QGroundControl.AppImage
+# build PX4
+RUN cd /home/catec/PX4-Autopilot && \
+    DONT_RUN=1 make px4_sitl_default gazebo-classic
 
-# # launch MAVROS
-# RUN roslaunch mavros px4.launch fcu_url:="udp://:14540@127.0.0.1:14557"
+##########################
+# EJECUCIÓN DEL PROGRAMA #
+##########################
 
-# # launch PX4 and Gazebo
-# RUN roslaunch px4 posix_sitl.launch
+# USER catec
+ENV USER catec
 
-# # launch ROS Offboard Node
-# RUN rosrun mavrostutorial node
+# setup entrypoint
+COPY ./entrypoint.sh /
+COPY ./tmux /
+
+ENTRYPOINT ["./catkin_ws/src/mavrostutorial/entrypoint.sh"]
+CMD ["bash"]
