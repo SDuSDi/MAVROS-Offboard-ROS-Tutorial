@@ -60,11 +60,14 @@ Last of all, the repository code should be on ~/catkin_ws/src and should be comp
 ```
 rosrun mavrostutorial node
 ```
-If you want to build a docker image with this code, it is posible using the following command on <b>mavrostutorial</b> folder.
+
+## Docker && Dockerfile
+
+If you want to build a docker image with this code that contains everything necessary for its use, it is posible using the following command on <b>mavrostutorial</b> folder.
 ```
 docker build -t braismtnez/final .
 ```
-To use said docker image, run the following command.
+To use said docker image, run the following command. Te program should show on startup.
 ```
 docker run -it --rm --privileged --net=host --volume /tmp/.X11-unix:/tmp/.X11-unix:rw --volume $XAUTHORITY:$XAUTHORITY --env QT_X11_NO_MITSHM=1 --env DISPLAY=$DISPLAY --env XAUTHORITY=$XAUTHORITY braismtnez/final
 ```
