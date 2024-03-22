@@ -33,6 +33,13 @@ The only ground control station tested with the code is QGroundControl, since it
 ## Usage
 
 For the usage of this package, the user must follow the following steps on the described order.
+
+First, cloning the repository is needed. The repository should be cloned in catkin_ws/src, since its a ROS package.
+```
+git clone https://github.com/SDuSDi/MAVROS-Offboard-ROS-Tutorial.git
+cd .. && catkin_make
+```
+Once the repository is correctly downloaded and built, we can proceed with the following commands.
 ```
 #These commands can be executed in any order
 
@@ -63,11 +70,11 @@ rosrun mavrostutorial node
 
 ## Docker && Dockerfile
 
-If you want to build a docker image with this code that contains everything necessary for its use, it is posible using the following command on <b>mavrostutorial</b> folder.
+If you want to build a docker image with this code that contains everything necessary for its use, it is posible using the following command on the cloned repository home folder.
 ```
 docker build -t braismtnez/final .
 ```
-To use said docker image, run the following command. Te program should show on startup.
+To use said docker image, run the following command. The program should show on startup.
 ```
 docker run -it --rm --privileged --net=host --volume /tmp/.X11-unix:/tmp/.X11-unix:rw --volume $XAUTHORITY:$XAUTHORITY --env QT_X11_NO_MITSHM=1 --env DISPLAY=$DISPLAY --env XAUTHORITY=$XAUTHORITY braismtnez/final
 ```
@@ -80,13 +87,3 @@ docker run -it --rm --privileged --net=host --volume /tmp/.X11-unix:/tmp/.X11-un
 ## Reach Out
 
 Brais Martínez -> bmartinez.ext@catec.aero 
-
-<!--
-This is an html comment 
-
-Plans that I dont want showing up:
-
-- This
-- That
-
--->
