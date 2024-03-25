@@ -10,6 +10,7 @@ project(mavrostutorial)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
 )
+find_package(PahoMqttCpp REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -147,6 +148,7 @@ add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catk
 target_link_libraries(${PROJECT_NAME}_node
   ${catkin_LIBRARIES}
 )
+target_link_libraries(${PROJECT_NAME}_node paho-mqtt3a paho-mqttpp3)
 
 #############
 ## Install ##

@@ -5,6 +5,32 @@ FROM osrf/ros:noetic-desktop-focal
 SHELL ["bash", "-c"]
 
 ENV ROS_DISTRO noetic
+RUN useradd -m -s /bin/bash catec
+WORKDIR /home/catec
+
+# instalation of prerequisites for MQTT
+RUN apt-get update && \
+    apt-get install -y build-essential gcc make cmake cmake-gui cmake-curses-gui && \
+    apt-get install -y libssl-dev && \
+    apt-get install -y doxygen graphviz && \
+    apt install -y git-all
+
+# install Paho MQTT C and build it
+RUN cd /home/catec && \
+    git clone https://github.com/eclipse/paho.mqtt.c.git && \
+    cd paho.mqtt.c && \
+    git checkout v1.3.13 && \
+    cmake -Bbuild -H. -DPAHO_ENABLE_TESTING=OFF -DPAHO_BUILD_STATIC=ON -DPAHO_WITH_SSL=ON -DPAHO_HIGH_PERFORMANCE=ON && \
+    cmake --build build/ --target install && \
+    ldconfig
+
+# install Paho MQTT C++ and build it
+RUN cd /home/catec && \
+    git clone https://github.com/eclipse/paho.mqtt.cpp && \
+    cd paho.mqtt.cpp && \
+    cmake -Bbuild -H. -DPAHO_WITH_MQTT_C=OFF -DPAHO_BUILD_STATIC=ON -DPAHO_BUILD_DOCUMENTATION=ON -DPAHO_BUILD_SAMPLES=ON && \
+    cmake --build build/ --target install && \
+    ldconfig
 
 # install ros packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -16,7 +42,6 @@ RUN apt-get update && \
     apt-get install -y ros-${ROS_DISTRO}-mavros ros-${ROS_DISTRO}-mavros-extras ros-${ROS_DISTRO}-mavros-msgs
 
 # build ros dependencies
-RUN useradd -m -s /bin/bash catec
 WORKDIR /home/catec/catkin_ws/src
 RUN catkin_create_pkg mavrostutorial roscpp
 COPY . /home/catec/catkin_ws/src/mavrostutorial
@@ -31,8 +56,7 @@ RUN apt-get update && \
 
 # install PX4 and dependencies
 WORKDIR /home/catec
-RUN apt install -y git-all && \
-    git clone https://github.com/PX4/PX4-Autopilot.git --recursive
+RUN git clone https://github.com/PX4/PX4-Autopilot.git --recursive
 
 # setup of PX4 on Ubuntu for simulation purposes
 RUN bash /home/catec/PX4-Autopilot/Tools/setup/ubuntu.sh
