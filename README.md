@@ -37,7 +37,12 @@ For the usage of this package, the user must follow the following steps on the d
 First, cloning the repository is needed. The repository should be cloned in catkin_ws/src, since its a ROS package.
 ```
 git clone https://github.com/SDuSDi/MAVROS-Offboard-ROS-Tutorial.git
-cd .. && catkin_make
+cd ..
+catkin_make
+catkin_make --only-pkg-with-deps MAVROS-Offboard-ROS-Tutorial
+
+# Just to be sure
+catkin_make 
 ```
 Once the repository is correctly downloaded and built, we can proceed with the following commands.
 ```
