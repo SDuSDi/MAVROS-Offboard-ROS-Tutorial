@@ -44,13 +44,14 @@ catkin_make --only-pkg-with-deps MAVROS-Offboard-ROS-Tutorial
 # Just to be sure
 catkin_make 
 ```
-Once the repository is correctly downloaded and built, we can proceed with the following commands.
-```
+Once the repository is correctly downloaded and built, we can proceed with the following command.
+<!-- 
 #These commands can be executed in any order
 
 # Ground control station
-./QGroundControl.AppImage
-
+./QGroundControl.AppImage 
+-->
+```
 # Launch of the MAVROS node with loopback IP and ROS port
 roslaunch mavros px4.launch fcu_url:="udp://:14540@127.0.0.1:14557"
 ```
@@ -77,11 +78,11 @@ rosrun mavrostutorial node
 
 If you want to build a docker image with this code that contains everything necessary for its use, it is posible using the following command on the cloned repository home folder.
 ```
-docker build -t braismtnez/final .
+docker build -t braismtnez/mavros .
 ```
 To use said docker image, run the following command. The program should show on startup.
 ```
-docker run -it --rm --privileged --net=host --volume /tmp/.X11-unix:/tmp/.X11-unix:rw --volume $XAUTHORITY:$XAUTHORITY --env QT_X11_NO_MITSHM=1 --env DISPLAY=$DISPLAY --env XAUTHORITY=$XAUTHORITY braismtnez/final
+docker run -it --rm --privileged --net=host --volume /tmp/.X11-unix:/tmp/.X11-unix:rw --volume $XAUTHORITY:$XAUTHORITY --env QT_X11_NO_MITSHM=1 --env DISPLAY=$DISPLAY --env XAUTHORITY=$XAUTHORITY braismtnez/mavros
 ```
 
 ## Diving Deeper

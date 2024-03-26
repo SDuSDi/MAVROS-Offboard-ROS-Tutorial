@@ -32,6 +32,9 @@ RUN cd /home/catec && \
     cmake --build build/ --target install && \
     ldconfig
 
+# install nlohmann JSON library
+RUN apt-get update && apt-get install nlohmann-json3-dev
+
 # install ros packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-noetic-desktop-full=1.5.0-1* \
@@ -65,12 +68,12 @@ RUN bash /home/catec/PX4-Autopilot/Tools/setup/ubuntu.sh
 RUN wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh && \
     bash ./install_geographiclib_datasets.sh  
 
-# install QGroundControl
-RUN wget https://s3-us-west-2.amazonaws.com/qgroundcontrol/latest/QGroundControl.AppImage && \
-    chmod +x QGroundControl.AppImage
+# # install QGroundControl
+# RUN wget https://s3-us-west-2.amazonaws.com/qgroundcontrol/latest/QGroundControl.AppImage && \
+#     chmod +x QGroundControl.AppImage
 
-# install QGroundControl dependencies
-RUN apt-get install -y libpulse-mainloop-glib0
+# # install QGroundControl dependencies
+# RUN apt-get install -y libpulse-mainloop-glib0
 
 # build PX4
 RUN cd /home/catec/PX4-Autopilot && \

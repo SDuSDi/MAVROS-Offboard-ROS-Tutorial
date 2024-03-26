@@ -23,5 +23,5 @@ windows:
   - Offb node:
       layout: tiled
       panes: # launch ROS Offboard Node
-        - sleep 6; rosrun mavrostutorial node
-        -
+        - cd .. && clear; sleep 6; rosrun mavrostutorial node
+        - cd .. && clear

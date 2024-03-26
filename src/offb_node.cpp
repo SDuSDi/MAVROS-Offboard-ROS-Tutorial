@@ -116,12 +116,13 @@ int main(int argc, char **argv)
             // Construct a string from the message payload.
             std::string messageString = messagePointer -> get_payload_str();
             // Print payload string to console (debugging).
-            std::cout << messageString << std::endl;
+            // std::cout << messageString << std::endl;
  
             // Perform processing on the string.
             // This is where message processing can be passed onto different
             // functions for parsing.
-            json ex1 = json::parse(messageString);
+            json data = json::parse(messageString);
+            std::cout<<data["objects"][0]["detection"]["bounding_box"]<<std::endl;
 
         }
 
