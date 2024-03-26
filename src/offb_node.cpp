@@ -133,24 +133,23 @@ int main(int argc, char **argv)
                     std::cout<<"Y_max: "<<data["objects"][0]["detection"]["bounding_box"]["y_max"];
                     std::cout<<" ; Y_min: "<<data["objects"][0]["detection"]["bounding_box"]["y_min"]<<std::endl;
 
-                    pose.pose.position.x = current_odometry.pose.pose.position.x; 
-                    pose.pose.position.y = current_odometry.pose.pose.position.y; 
-                    pose.pose.position.z = 2;
-
                     if(data["objects"][0]["detection"]["bounding_box"]["y_max"]>0.9){
-                        pose.pose.position.x = current_odometry.pose.pose.position.x - 0.1; 
-                    //     geometry_msgs::TwistStamped vel;
-                    //     vel.twist.linear.x = -0.1;
-                    //     vel_pub.publish(vel);
-                    }else{if(data["objects"][0]["detection"]["bounding_box"]["y_min"]<0.1){  
-                        pose.pose.position.x = current_odometry.pose.pose.position.x + 0.1; 
-                    //     geometry_msgs::TwistStamped vel;
-                    //     vel.twist.linear.x = 0.1;
-                    //     vel_pub.publish(vel);
-                        }
-                    }
+                                
+                        geometry_msgs::TwistStamped vel;
+                        vel.twist.linear.x = -0.1;
+                        vel_pub.publish(vel);
 
-                    local_pos_pub.publish(pose);
+                    }else{
+
+                        if(data["objects"][0]["detection"]["bounding_box"]["y_min"]<0.1){
+                                                
+                            geometry_msgs::TwistStamped vel;
+                            vel.twist.linear.x = 0.1;
+                            vel_pub.publish(vel);
+
+                        }
+
+                    }
 
                 }else{
 
