@@ -10,6 +10,8 @@
 #include <mavros_msgs/CommandBool.h>
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
+#include <nav_msgs/Odometry.h>
+#include <geometry_msgs/TwistStamped.h>
 
 // MQTT library
 #include <mqtt/client.h>
@@ -19,27 +21,38 @@
 using json = nlohmann::json; // for convenience
 
 mavros_msgs::State current_state;
+nav_msgs::Odometry current_odometry;
 
 void state_cb(const mavros_msgs::State::ConstPtr& msg){
     current_state = *msg;
 }
 
+void odometry_cb(const nav_msgs::Odometry::ConstPtr& msg){
+    current_odometry = *msg;
+}
+
 int main(int argc, char **argv)
 {
 
-    // Initialize ros node and make basic comprobations
+    // Initialize ros node
     ros::init(argc,argv,"MAVROS_Offboard_Control_Node");
     ros::NodeHandle nh;
 
+    // Subscribe to state and odometry
     ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>("mavros/state",10,state_cb);
+    ros::Subscriber odometry_sub = nh.subscribe<nav_msgs::Odometry>("mavros/odometry/in",10, odometry_cb);
 
+    // Publish to setpoint and velocity
     ros::Publisher local_pos_pub = nh.advertise<geometry_msgs::PoseStamped>("mavros/setpoint_position/local",10);
+    ros::Publisher vel_pub = nh.advertise<geometry_msgs::TwistStamped>("mavros/setpoint_velocity/cmd_vel",10);
 
+    // Create service clients for arming and set mode
     ros::ServiceClient arming_client = nh.serviceClient<mavros_msgs::CommandBool>("mavros/cmd/arming");
     ros::ServiceClient set_mode_client = nh.serviceClient<mavros_msgs::SetMode>("mavros/set_mode");
 
     ros::Rate rate(20.0); //Publishing rate faster than 2Hz for setpoint publising
 
+    // Wait for connection to be established
     while(ros::ok() && !current_state.connected){
         ros::spinOnce();
         rate.sleep();
@@ -77,7 +90,7 @@ int main(int argc, char **argv)
     // Set arm command
     mavros_msgs::CommandBool arm_cmd;
     arm_cmd.request.value = true;
-    ROS_INFO("Vehicle armed");
+    ROS_INFO("Vehicle arm command prepared");
 
     ROS_INFO("Starting simulation loop");
     mqtt::const_message_ptr messagePointer; // Construct a message pointer to hold an incoming message.
@@ -94,6 +107,7 @@ int main(int argc, char **argv)
             }
 
         last_request = ros::Time::now();
+        local_pos_pub.publish(pose);
 
         }else{
 
@@ -104,29 +118,52 @@ int main(int argc, char **argv)
                 }
 
             last_request = ros::Time::now();
+            local_pos_pub.publish(pose);
 
+            }else{
+
+                if (client.try_consume_message(&messagePointer)){
+
+                    std::string messageString = messagePointer -> get_payload_str();
+
+                    json data = json::parse(messageString);
+
+                    std::cout<<"X_max: "<<data["objects"][0]["detection"]["bounding_box"]["x_max"];
+                    std::cout<<" ; X_min: "<<data["objects"][0]["detection"]["bounding_box"]["x_min"]<<std::endl;
+                    std::cout<<"Y_max: "<<data["objects"][0]["detection"]["bounding_box"]["y_max"];
+                    std::cout<<" ; Y_min: "<<data["objects"][0]["detection"]["bounding_box"]["y_min"]<<std::endl;
+
+                    pose.pose.position.x = current_odometry.pose.pose.position.x; 
+                    pose.pose.position.y = current_odometry.pose.pose.position.y; 
+                    pose.pose.position.z = 2;
+
+                    if(data["objects"][0]["detection"]["bounding_box"]["y_max"]>0.9){
+                        pose.pose.position.x = current_odometry.pose.pose.position.x - 0.1; 
+                    //     geometry_msgs::TwistStamped vel;
+                    //     vel.twist.linear.x = -0.1;
+                    //     vel_pub.publish(vel);
+                    }else{if(data["objects"][0]["detection"]["bounding_box"]["y_min"]<0.1){  
+                        pose.pose.position.x = current_odometry.pose.pose.position.x + 0.1; 
+                    //     geometry_msgs::TwistStamped vel;
+                    //     vel.twist.linear.x = 0.1;
+                    //     vel_pub.publish(vel);
+                        }
+                    }
+
+                    local_pos_pub.publish(pose);
+
+                }else{
+
+                    pose.pose.position.x = current_odometry.pose.pose.position.x; 
+                    pose.pose.position.y = current_odometry.pose.pose.position.y; 
+                    pose.pose.position.z = 2;
+
+                    local_pos_pub.publish(pose);
+
+                }
             }
         }
- 
-        // Try to consume a message, passing messagePointer by reference.
-        // If a message is consumed, the function will return `true`, 
-        // allowing control to enter the if-statement body.
-        if (client.try_consume_message(&messagePointer)){
 
-            // Construct a string from the message payload.
-            std::string messageString = messagePointer -> get_payload_str();
-            // Print payload string to console (debugging).
-            // std::cout << messageString << std::endl;
- 
-            // Perform processing on the string.
-            // This is where message processing can be passed onto different
-            // functions for parsing.
-            json data = json::parse(messageString);
-            std::cout<<data["objects"][0]["detection"]["bounding_box"]<<std::endl;
-
-        }
-
-        local_pos_pub.publish(pose);
         ros::spinOnce();
         rate.sleep();
 

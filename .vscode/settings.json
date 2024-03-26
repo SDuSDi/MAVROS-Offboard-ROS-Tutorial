@@ -1,3 +1,6 @@
 {
-    "cmake.sourceDirectory": "/home/bmartinez/catkin_ws/src/mavrostutorial"
+    "cmake.sourceDirectory": "/home/bmartinez/catkin_ws/src/mavrostutorial",
+    "files.associations": {
+        "iostream": "cpp"
+    }
 }
