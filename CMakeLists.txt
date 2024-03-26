@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
 )
 find_package(PahoMqttCpp REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -149,6 +150,7 @@ target_link_libraries(${PROJECT_NAME}_node
   ${catkin_LIBRARIES}
 )
 target_link_libraries(${PROJECT_NAME}_node paho-mqtt3a paho-mqttpp3)
+target_link_libraries(${PROJECT_NAME}_node nlohmann_json::nlohmann_json)
 
 #############
 ## Install ##

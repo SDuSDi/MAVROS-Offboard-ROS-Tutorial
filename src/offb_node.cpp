@@ -11,8 +11,12 @@
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
 
-// MQTT libraries and dependencies
+// MQTT library
 #include <mqtt/client.h>
+
+// JSON library
+#include <nlohmann/json.hpp>
+using json = nlohmann::json; // for convenience
 
 mavros_msgs::State current_state;
 
@@ -116,8 +120,9 @@ int main(int argc, char **argv)
  
             // Perform processing on the string.
             // This is where message processing can be passed onto different
-            // functions for parsing. 
-            // Here, we break the loop and exit the program if a `quit` is received.
+            // functions for parsing.
+            json ex1 = json::parse(messageString);
+
         }
 
         local_pos_pub.publish(pose);
