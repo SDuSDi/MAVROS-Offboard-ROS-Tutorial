@@ -5,17 +5,17 @@ windows:
   - roscore:
       layout: tiled
       panes: # launch roscore
-        - roscore
+        - cd .. && clear; roscore
   - MAVROS:
       layout: tiled
       panes: # launch MAVROS
-        - sleep 2; roslaunch mavros px4.launch fcu_url:="udp://:14540@127.0.0.1:14557"
-        - 
+        - cd .. && clear; sleep 2; roslaunch mavros px4.launch fcu_url:="udp://:14540@127.0.0.1:14557"
+        - cd .. && clear
   - PX4:
       layout: tiled
       panes: # launch PX4 and Gazebo
         - sleep 2 && cd /home/catec/PX4-Autopilot && DONT_RUN=1 make px4_sitl_default gazebo-classic && source "/home/catec/catkin_ws/devel/setup.bash" && source /home/catec/PX4-Autopilot/Tools/simulation/gazebo-classic/setup_gazebo.bash $(pwd) $(pwd)/build/px4_sitl_default && export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:"$(pwd)" && export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:"$(pwd)/Tools/simulation/gazebo-classic/sitl_gazebo-classic" && roslaunch px4 posix_sitl.launch
-        - 
+        - cd .. && clear
   # - QGroundControl:
   #     layout: tiled
   #     panes: # launch QGroundControl
