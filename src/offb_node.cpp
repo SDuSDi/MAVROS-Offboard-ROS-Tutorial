@@ -14,7 +14,7 @@
 #include <geometry_msgs/TwistStamped.h>
 
 // MQTT library
-#include <mqtt/client.h>
+#include <mqtt/async_client.h>
 
 // JSON library
 #include <nlohmann/json.hpp>
@@ -24,7 +24,7 @@ mavros_msgs::State current_state;
 nav_msgs::Odometry current_odometry;
 
 json data;
-mqtt::client *client = NULL;
+mqtt::async_client *client = NULL;
 ros::Timer timer;
 
 void state_cb(const mavros_msgs::State::ConstPtr& msg){
@@ -72,8 +72,7 @@ int main(int argc, char **argv)
     ROS_INFO("ROS is functioning correctly and is connected to MAVROS");
 
     // Create MQTT client and connect
-    client = new mqtt::client("127.0.0.1:1883", "ROS-consumer", 0, (mqtt::iclient_persistence *)nullptr);
-    client->set_timeout(5000);
+    client = new mqtt::async_client("127.0.0.1:1883", "ROS-consumer", 0);
 
     ROS_INFO("Connecting to MQTT broker...");
     client->connect();
