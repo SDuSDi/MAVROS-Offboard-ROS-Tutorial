@@ -82,7 +82,7 @@ int main(int argc, char **argv)
     client->subscribe("dlstreamer-publisher");
     client->start_consuming(); 
     ROS_INFO("Subscribed to MQTT topic and ready for consumption");
-    timer = nh.createTimer(ros::Duration(1.0/10.0), mqtt_cb, false, true);
+    timer = nh.createTimer(ros::Duration(1.0/50.0), mqtt_cb, false, true);
 
     // Create poses for the offboard mode 
     geometry_msgs::PoseStamped pose;
