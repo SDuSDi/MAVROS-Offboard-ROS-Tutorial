@@ -44,12 +44,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN apt-get update && \
     apt-get install -y ros-${ROS_DISTRO}-mavros ros-${ROS_DISTRO}-mavros-extras ros-${ROS_DISTRO}-mavros-msgs
 
-# build ros dependencies
-WORKDIR /home/catec/catkin_ws/src
-RUN catkin_create_pkg mavrostutorial roscpp
-COPY . /home/catec/catkin_ws/src/mavrostutorial
-RUN cd .. && source /opt/ros/$ROS_DISTRO/setup.bash && catkin_make && source devel/setup.bash && cd src
-
 # install vim, terminator, tmux and tmuxinator
 RUN apt-get update && \
     apt-get install -y vim && \
@@ -79,9 +73,18 @@ RUN wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/
 RUN cd /home/catec/PX4-Autopilot && \
     DONT_RUN=1 make px4_sitl_default gazebo-classic
 
+# build ros dependencies
+WORKDIR /home/catec/catkin_ws/src
+RUN catkin_create_pkg mavrostutorial roscpp
+COPY . /home/catec/catkin_ws/src/mavrostutorial
+RUN cd .. && source /opt/ros/$ROS_DISTRO/setup.bash && catkin_make && source devel/setup.bash && cd src
+
+
 ##########################
 # EJECUCIÓN DEL PROGRAMA #
 ##########################
+
+WORKDIR /home/catec
 
 # USER catec
 ENV USER catec

@@ -23,12 +23,24 @@ using json = nlohmann::json; // for convenience
 mavros_msgs::State current_state;
 nav_msgs::Odometry current_odometry;
 
+json data;
+mqtt::client *client = NULL;
+ros::Timer timer;
+
 void state_cb(const mavros_msgs::State::ConstPtr& msg){
     current_state = *msg;
 }
 
 void odometry_cb(const nav_msgs::Odometry::ConstPtr& msg){
     current_odometry = *msg;
+}
+
+void mqtt_cb(const ros::TimerEvent&){
+    mqtt::const_message_ptr messagePointer;
+    if (client->try_consume_message(&messagePointer)){
+        ROS_INFO("Received message: %s", messagePointer -> get_payload_str().c_str());
+        //data = json::parse(messagePointer -> get_payload_str());
+    }
 }
 
 int main(int argc, char **argv)
@@ -50,7 +62,7 @@ int main(int argc, char **argv)
     ros::ServiceClient arming_client = nh.serviceClient<mavros_msgs::CommandBool>("mavros/cmd/arming");
     ros::ServiceClient set_mode_client = nh.serviceClient<mavros_msgs::SetMode>("mavros/set_mode");
 
-    ros::Rate rate(20.0); //Publishing rate faster than 2Hz for setpoint publising
+    ros::Rate rate(5.0); //Publishing rate faster than 2Hz for setpoint publising
 
     // Wait for connection to be established
     while(ros::ok() && !current_state.connected){
@@ -59,17 +71,18 @@ int main(int argc, char **argv)
     }
     ROS_INFO("ROS is functioning correctly and is connected to MAVROS");
 
-    // Create MQTT client and make basic comprobations
-    mqtt::client client("127.0.0.1:1883", "ROS-consumer");
-    client.set_timeout(5000);
+    // Create MQTT client and connect
+    client = new mqtt::client("127.0.0.1:1883", "ROS-consumer", 0, (mqtt::iclient_persistence *)nullptr);
+    client->set_timeout(5000);
 
     ROS_INFO("Connecting to MQTT broker...");
-    client.connect();
+    client->connect();
     ROS_INFO("Connected to MQTT broker");
 
-    client.subscribe("dlstreamer-publisher");
-    client.start_consuming(); 
+    client->subscribe("dlstreamer-publisher");
+    client->start_consuming(); 
     ROS_INFO("Subscribed to MQTT topic and ready for consumption");
+    timer = nh.createTimer(ros::Duration(1.0/10.0), mqtt_cb, false, true);
 
     // Create poses for the offboard mode 
     geometry_msgs::PoseStamped pose;
@@ -122,45 +135,34 @@ int main(int argc, char **argv)
 
             }else{
 
-                if (client.try_consume_message(&messagePointer)){
+                /*std::cout<<"X_max: "<<data["objects"][0]["detection"]["bounding_box"]["x_max"];
+                std::cout<<" ; X_min: "<<data["objects"][0]["detection"]["bounding_box"]["x_min"];
+                std::cout<<" ; Y_max: "<<data["objects"][0]["detection"]["bounding_box"]["y_max"];
+                std::cout<<" ; Y_min: "<<data["objects"][0]["detection"]["bounding_box"]["y_min"]<<std::endl;*/
 
-                    std::string messageString = messagePointer -> get_payload_str();
+                pose.pose.position.x = std::round(current_odometry.pose.pose.position.x*10)/10; 
+                pose.pose.position.y = std::round(current_odometry.pose.pose.position.y*10)/10; 
+                pose.pose.position.z = 2;
 
-                    json data = json::parse(messageString);
+                if(data["objects"][0]["detection"]["bounding_box"]["y_max"]>0.9){
+                    pose.pose.position.x = current_odometry.pose.pose.position.x - 0.1; 
 
-                    std::cout<<"X_max: "<<data["objects"][0]["detection"]["bounding_box"]["x_max"];
-                    std::cout<<" ; X_min: "<<data["objects"][0]["detection"]["bounding_box"]["x_min"]<<std::endl;
-                    std::cout<<"Y_max: "<<data["objects"][0]["detection"]["bounding_box"]["y_max"];
-                    std::cout<<" ; Y_min: "<<data["objects"][0]["detection"]["bounding_box"]["y_min"]<<std::endl;
+                }else{if(data["objects"][0]["detection"]["bounding_box"]["y_min"]<0.1){  
+                    pose.pose.position.x = current_odometry.pose.pose.position.x + 0.1; 
 
-                    pose.pose.position.x = current_odometry.pose.pose.position.x; 
-                    pose.pose.position.y = current_odometry.pose.pose.position.y; 
-                    pose.pose.position.z = 2;
-
-                    if(data["objects"][0]["detection"]["bounding_box"]["y_max"]>0.9){
-                        pose.pose.position.x = current_odometry.pose.pose.position.x - 0.1; 
-                    //     geometry_msgs::TwistStamped vel;
-                    //     vel.twist.linear.x = -0.1;
-                    //     vel_pub.publish(vel);
-                    }else{if(data["objects"][0]["detection"]["bounding_box"]["y_min"]<0.1){  
-                        pose.pose.position.x = current_odometry.pose.pose.position.x + 0.1; 
-                    //     geometry_msgs::TwistStamped vel;
-                    //     vel.twist.linear.x = 0.1;
-                    //     vel_pub.publish(vel);
-                        }
                     }
-
-                    local_pos_pub.publish(pose);
-
-                }else{
-
-                    pose.pose.position.x = current_odometry.pose.pose.position.x; 
-                    pose.pose.position.y = current_odometry.pose.pose.position.y; 
-                    pose.pose.position.z = 2;
-
-                    local_pos_pub.publish(pose);
-
                 }
+
+                if(data["objects"][0]["detection"]["bounding_box"]["x_max"]>0.9){
+                    pose.pose.position.x = current_odometry.pose.pose.position.y - 0.1; 
+
+                }else{if(data["objects"][0]["detection"]["bounding_box"]["x_min"]<0.1){  
+                    pose.pose.position.x = current_odometry.pose.pose.position.y + 0.1; 
+
+                    }
+                }
+
+                local_pos_pub.publish(pose);
             }
         }
 
