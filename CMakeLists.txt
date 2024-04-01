@@ -10,11 +10,11 @@ project(mavrostutorial)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
 )
-find_package(PahoMqttCpp REQUIRED)
-find_package(nlohmann_json REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
+find_package(PahoMqttCpp REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -119,6 +119,9 @@ include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
 )
+
+## Link CPP source code to main code
+file(GLOB SOURCES src/classes.cpp)
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}

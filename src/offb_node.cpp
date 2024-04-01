@@ -15,18 +15,17 @@
 
 // MQTT library
 #include <mqtt/async_client.h>
-
 // JSON library
 #include <nlohmann/json.hpp>
 using json = nlohmann::json; // for convenience
+// Callback file
+#include "classes.cpp"
 
 mavros_msgs::State current_state;
 nav_msgs::Odometry current_odometry;
 
 // MQTT message storage and access
-json data;
 mqtt::async_client *client = NULL;
-ros::Timer timer;
 
 void state_cb(const mavros_msgs::State::ConstPtr& msg){
     current_state = *msg;
@@ -35,95 +34,6 @@ void state_cb(const mavros_msgs::State::ConstPtr& msg){
 void odometry_cb(const nav_msgs::Odometry::ConstPtr& msg){
     current_odometry = *msg;
 }
-
-/////////////////////////////////////////////////////////////////////////////
-//TODO: Create a callback for MQTT using the callback class
-/**
- * Local callback & listener class for use with the client connection.
- * This is primarily intended to receive messages, but it will also monitor
- * the connection to the broker. If the connection is lost, it will attempt
- * to restore the connection and re-subscribe to the topic.
- */
-class callback : public virtual mqtt::callback,
-					public virtual mqtt::iaction_listener
-
-{
-	// Counter for the number of connection retries
-	int nretry_;
-	// The MQTT client
-	mqtt::async_client& cli_;
-	// Options to use if we need to reconnect
-	mqtt::connect_options& connOpts_;
-	// An action listener to display the result of actions.
-	action_listener subListener_;
-
-	// This deomonstrates manually reconnecting to the broker by calling
-	// connect() again. This is a possibility for an application that keeps
-	// a copy of it's original connect_options, or if the app wants to
-	// reconnect with different options.
-	// Another way this can be done manually, if using the same options, is
-	// to just call the async_client::reconnect() method.
-	void reconnect() {
-		std::this_thread::sleep_for(std::chrono::milliseconds(2500));
-		try {
-			cli_.connect(connOpts_, nullptr, *this);
-		}
-		catch (const mqtt::exception& exc) {
-			std::cerr << "Error: " << exc.what() << std::endl;
-			exit(1);
-		}
-	}
-
-	// Re-connection failure
-	void on_failure(const mqtt::token& tok) override {
-		std::cout << "Connection attempt failed" << std::endl;
-		if (++nretry_ > N_RETRY_ATTEMPTS)
-			exit(1);
-		reconnect();
-	}
-
-	// (Re)connection success
-	// Either this or connected() can be used for callbacks.
-	void on_success(const mqtt::token& tok) override {}
-
-	// (Re)connection success
-	void connected(const std::string& cause) override {
-		std::cout << "\nConnection success" << std::endl;
-		std::cout << "\nSubscribing to topic '" << TOPIC << "'\n"
-			<< "\tfor client " << CLIENT_ID
-			<< " using QoS" << QOS << "\n"
-			<< "\nPress Q<Enter> to quit\n" << std::endl;
-
-		cli_.subscribe(TOPIC, QOS, nullptr, subListener_);
-	}
-
-	// Callback for when the connection is lost.
-	// This will initiate the attempt to manually reconnect.
-	void connection_lost(const std::string& cause) override {
-		std::cout << "\nConnection lost" << std::endl;
-		if (!cause.empty())
-			std::cout << "\tcause: " << cause << std::endl;
-
-		std::cout << "Reconnecting..." << std::endl;
-		nretry_ = 0;
-		reconnect();
-	}
-
-	// Callback for when a message arrives.
-	void message_arrived(mqtt::const_message_ptr msg) override {
-		std::cout << "Message arrived" << std::endl;
-		std::cout << "\ttopic: '" << msg->get_topic() << "'" << std::endl;
-		std::cout << "\tpayload: '" << msg->to_string() << "'\n" << std::endl;
-	}
-
-	void delivery_complete(mqtt::delivery_token_ptr token) override {}
-
-public:
-	callback(mqtt::async_client& cli, mqtt::connect_options& connOpts)
-				: nretry_(0), cli_(cli), connOpts_(connOpts), subListener_("Subscription") {}
-};
-
-/////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char **argv)
 {
@@ -144,7 +54,7 @@ int main(int argc, char **argv)
     ros::ServiceClient arming_client = nh.serviceClient<mavros_msgs::CommandBool>("mavros/cmd/arming");
     ros::ServiceClient set_mode_client = nh.serviceClient<mavros_msgs::SetMode>("mavros/set_mode");
 
-    ros::Rate rate(5.0); //Publishing rate faster than 2Hz for setpoint publising
+    ros::Rate rate(20.0); //Publishing rate faster than 2Hz for setpoint publising
 
     // Wait for connection to be established
     while(ros::ok() && !current_state.connected){
@@ -156,15 +66,25 @@ int main(int argc, char **argv)
     // Create MQTT client and connect
     client = new mqtt::async_client("127.0.0.1:1883", "ROS-consumer", 0);
 
+    // Set connection options
+	mqtt::connect_options connOpts;
+	connOpts.set_clean_session(false);
+
+    // Create callback object and set callback for use
+    callback mqtt_cb(*client, connOpts);
+    client->set_callback(mqtt_cb);
+
+    client->start_consuming();
+    ROS_INFO("MQTT client ready for consumption");
+
     ROS_INFO("Connecting to MQTT broker...");
-    client->connect();
+    client->connect(connOpts);
     ROS_INFO("Connected to MQTT broker");
 
-    client->set_callback(&mqtt_cb);
-    client->subscribe("dlstreamer-publisher",0);
-    client->start_consuming(); 
-    ROS_INFO("Subscribed to MQTT topic and ready for consumption");
-    //timer = nh.createTimer(ros::Duration(1.0/10.0), mqtt_cb, false, true);
+    while(!client->is_connected()){
+        ROS_INFO("Failed to connect to MQTT broker. Retrying...");
+        rate.sleep();
+    }
 
     // Create poses for the offboard mode 
     geometry_msgs::PoseStamped pose;
@@ -188,7 +108,6 @@ int main(int argc, char **argv)
     ROS_INFO("Vehicle arm command prepared");
 
     ROS_INFO("Starting simulation loop");
-    mqtt::const_message_ptr messagePointer; // Construct a message pointer to hold an incoming message.
     ros::Time last_request = ros::Time::now();
 
     ROS_INFO("Starting offboard node and running for 5 seconds");
@@ -245,6 +164,7 @@ int main(int argc, char **argv)
                 }
 
                 local_pos_pub.publish(pose);
+
             }
         }
 

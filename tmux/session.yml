@@ -1,6 +1,6 @@
 name: MAVROS Offboard Control Node
 root: ./
-startup_window: PX4
+startup_window: Offb node
 windows:
   - roscore:
       layout: tiled

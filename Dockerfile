@@ -8,6 +8,9 @@ ENV ROS_DISTRO noetic
 RUN useradd -m -s /bin/bash catec
 WORKDIR /home/catec
 
+# install catkin tools
+RUN apt-get update && apt-get install -y python3-catkin-tools
+
 # instalation of prerequisites for MQTT
 RUN apt-get update && \
     apt-get install -y build-essential gcc make cmake cmake-gui cmake-curses-gui && \
@@ -75,9 +78,10 @@ RUN cd /home/catec/PX4-Autopilot && \
 
 # build ros dependencies
 WORKDIR /home/catec/catkin_ws/src
+RUN cd .. && catkin init
 RUN catkin_create_pkg mavrostutorial roscpp
 COPY . /home/catec/catkin_ws/src/mavrostutorial
-RUN cd .. && source /opt/ros/$ROS_DISTRO/setup.bash && catkin_make && source devel/setup.bash && cd src
+RUN cd .. && source /opt/ros/$ROS_DISTRO/setup.bash && catkin build && source devel/setup.bash && cd src
 
 
 ##########################
