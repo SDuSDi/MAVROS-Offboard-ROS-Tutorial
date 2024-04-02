@@ -46,15 +46,15 @@ int main(int argc, char **argv)
     ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>("mavros/state",10,state_cb);
     ros::Subscriber odometry_sub = nh.subscribe<nav_msgs::Odometry>("mavros/odometry/in",10, odometry_cb);
 
-    // Publish to setpoint and velocity
-    ros::Publisher local_pos_pub = nh.advertise<geometry_msgs::PoseStamped>("mavros/setpoint_position/local",10);
+    // Publish to cmd velocity
     ros::Publisher vel_pub = nh.advertise<geometry_msgs::TwistStamped>("mavros/setpoint_velocity/cmd_vel",10);
 
     // Create service clients for arming and set mode
     ros::ServiceClient arming_client = nh.serviceClient<mavros_msgs::CommandBool>("mavros/cmd/arming");
     ros::ServiceClient set_mode_client = nh.serviceClient<mavros_msgs::SetMode>("mavros/set_mode");
 
-    ros::Rate rate(20.0); //Publishing rate faster than 2Hz for setpoint publising
+    float speed = 20.0;
+    ros::Rate rate(speed); //Publishing rate faster than 2Hz for setpoint publising
 
     // Wait for connection to be established
     while(ros::ok() && !current_state.connected){
@@ -86,17 +86,6 @@ int main(int argc, char **argv)
         rate.sleep();
     }
 
-    // Create poses for the offboard mode 
-    geometry_msgs::PoseStamped pose;
-    pose.pose.position.x = 0; pose.pose.position.y = 0; pose.pose.position.z = 2;
-
-    for(int i = 100; ros::ok() && i>0; --i){
-        local_pos_pub.publish(pose);
-        ros::spinOnce();
-        rate.sleep();
-    }
-    ROS_INFO("Local position setpoint sent");
-
     // Set offboard mode
     mavros_msgs::SetMode offb_set_mode;
     offb_set_mode.request.custom_mode = "OFFBOARD";
@@ -110,8 +99,16 @@ int main(int argc, char **argv)
     ROS_INFO("Starting simulation loop");
     ros::Time last_request = ros::Time::now();
 
+    double estimated_x = 0.0;
+    double estimated_y = 0.0;
+
     ROS_INFO("Starting offboard node and running for 5 seconds");
     while(ros::ok()){
+
+        geometry_msgs::TwistStamped vel;
+
+        vel.twist.linear.x=0; vel.twist.linear.y=0; vel.twist.linear.z=0;
+        vel.twist.angular.x=0; vel.twist.angular.y=0; vel.twist.angular.z=0;
 
         if(current_state.mode!="OFFBOARD"&&(ros::Time::now()-last_request>ros::Duration(5.0))){
 
@@ -134,41 +131,37 @@ int main(int argc, char **argv)
 
             }else{  // TODO: Fix whatever is making the drone fly away
 
-                /*std::cout<<"X_max: "<<data["objects"][0]["detection"]["bounding_box"]["x_max"];
-                std::cout<<" ; X_min: "<<data["objects"][0]["detection"]["bounding_box"]["x_min"];
-                std::cout<<" ; Y_max: "<<data["objects"][0]["detection"]["bounding_box"]["y_max"];
-                std::cout<<" ; Y_min: "<<data["objects"][0]["detection"]["bounding_box"]["y_min"]<<std::endl;*/
-
-                geometry_msgs::TwistStamped vel;
-
                 if(data["objects"][0]["detection"]["bounding_box"]["y_max"]>0.9){
-                    vel.twist.linear.x += 0; 
+                    std::cout<<"Trigger Y max"<<std::endl;
+                    estimated_x += 0.5 * 1.0/speed; 
 
-                }else{if(data["objects"][0]["detection"]["bounding_box"]["y_min"]<0.1){  
-                    vel.twist.linear.x += -0;  
+                }else{if(data["objects"][0]["detection"]["bounding_box"]["y_min"]<0.1){ 
+                    std::cout<<"Trigger Y min"<<std::endl;
+                    estimated_x += -0.5 * 1.0/speed;  
 
                     }
                 }
 
                 if(data["objects"][0]["detection"]["bounding_box"]["x_max"]>0.9){
-                    vel.twist.linear.y += 0;  
+                    std::cout<<"Trigger X max"<<std::endl;
+                    estimated_y += 0.4 * 1.0/speed;   
 
                 }else{if(data["objects"][0]["detection"]["bounding_box"]["x_min"]<0.1){  
-                    vel.twist.linear.y += -0;  
+                    std::cout<<"Trigger X min"<<std::endl;
+                    estimated_y += -0.4 * 1.0/speed;  
 
                     }
                 }
 
-                vel_pub.publish(vel); 
+                int kp = 1;
+                vel.twist.linear.x = kp * (estimated_x - current_odometry.pose.pose.position.x); //0-current_odometry.twist.twist.linear.x 
+                vel.twist.linear.y = kp * (estimated_y - current_odometry.pose.pose.position.y);
+                vel.twist.linear.z = kp * (2 - current_odometry.pose.pose.position.z);
 
             }
         }
 
-        pose.pose.position.x = 0; //std::round(current_odometry.pose.pose.position.x * 10) / 10.0; 
-        pose.pose.position.y = 0; //std::round(current_odometry.pose.pose.position.y * 10) / 10.0;
-        pose.pose.position.z = 2;
-
-        local_pos_pub.publish(pose);
+        vel_pub.publish(vel); 
 
         ros::spinOnce();
         rate.sleep();
