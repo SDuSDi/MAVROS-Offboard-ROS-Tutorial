@@ -154,7 +154,7 @@ int main(int argc, char **argv)
                 }
 
                 int kp = 1;
-                vel.twist.linear.x = kp * (estimated_x - current_odometry.pose.pose.position.x); //0-current_odometry.twist.twist.linear.x 
+                vel.twist.linear.x = kp * (estimated_x - current_odometry.pose.pose.position.x);
                 vel.twist.linear.y = kp * (estimated_y - current_odometry.pose.pose.position.y);
                 vel.twist.linear.z = kp * (2 - current_odometry.pose.pose.position.z);
 
