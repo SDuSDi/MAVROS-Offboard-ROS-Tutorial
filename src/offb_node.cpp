@@ -129,25 +129,21 @@ int main(int argc, char **argv)
 
             last_request = ros::Time::now();
 
-            }else{  // TODO: Fix whatever is making the drone fly away
+            }else{
 
                 if(data["objects"][0]["detection"]["bounding_box"]["y_max"]>0.9){
-                    std::cout<<"Trigger Y max"<<std::endl;
                     estimated_x += 0.5 * 1.0/speed; 
 
                 }else{if(data["objects"][0]["detection"]["bounding_box"]["y_min"]<0.1){ 
-                    std::cout<<"Trigger Y min"<<std::endl;
                     estimated_x += -0.5 * 1.0/speed;  
 
                     }
                 }
 
                 if(data["objects"][0]["detection"]["bounding_box"]["x_max"]>0.9){
-                    std::cout<<"Trigger X max"<<std::endl;
                     estimated_y += 0.4 * 1.0/speed;   
 
                 }else{if(data["objects"][0]["detection"]["bounding_box"]["x_min"]<0.1){  
-                    std::cout<<"Trigger X min"<<std::endl;
                     estimated_y += -0.4 * 1.0/speed;  
 
                     }
