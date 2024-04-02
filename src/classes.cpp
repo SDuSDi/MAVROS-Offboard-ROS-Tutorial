@@ -53,7 +53,6 @@ public:
 };
 
 /////////////////////////////////////////////////////////////////////////////
-// TODO: Create a callback for MQTT using the callback class
 // Local callback & listener class for use with the client connection.
 // This is primarily intended to receive messages, but it will also monitor
 // the connection to the broker. If the connection is lost, it will attempt

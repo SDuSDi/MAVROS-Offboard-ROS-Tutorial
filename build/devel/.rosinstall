@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/bmartinez/catkin_ws/src/mavrostutorial/build/devel/setup.sh

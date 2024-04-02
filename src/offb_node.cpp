@@ -121,7 +121,6 @@ int main(int argc, char **argv)
             }
 
         last_request = ros::Time::now();
-        local_pos_pub.publish(pose);
 
         }else{
 
@@ -132,41 +131,44 @@ int main(int argc, char **argv)
                 }
 
             last_request = ros::Time::now();
-            local_pos_pub.publish(pose);
 
-            }else{
+            }else{  // TODO: Fix whatever is making the drone fly away
 
                 /*std::cout<<"X_max: "<<data["objects"][0]["detection"]["bounding_box"]["x_max"];
                 std::cout<<" ; X_min: "<<data["objects"][0]["detection"]["bounding_box"]["x_min"];
                 std::cout<<" ; Y_max: "<<data["objects"][0]["detection"]["bounding_box"]["y_max"];
                 std::cout<<" ; Y_min: "<<data["objects"][0]["detection"]["bounding_box"]["y_min"]<<std::endl;*/
 
-                pose.pose.position.x = std::round(current_odometry.pose.pose.position.x*10)/10; 
-                pose.pose.position.y = std::round(current_odometry.pose.pose.position.y*10)/10; 
-                pose.pose.position.z = 2;
+                geometry_msgs::TwistStamped vel;
 
                 if(data["objects"][0]["detection"]["bounding_box"]["y_max"]>0.9){
-                    pose.pose.position.x = current_odometry.pose.pose.position.x - 0.1; 
+                    vel.twist.linear.x += 0; 
 
                 }else{if(data["objects"][0]["detection"]["bounding_box"]["y_min"]<0.1){  
-                    pose.pose.position.x = current_odometry.pose.pose.position.x + 0.1; 
+                    vel.twist.linear.x += -0;  
 
                     }
                 }
 
                 if(data["objects"][0]["detection"]["bounding_box"]["x_max"]>0.9){
-                    pose.pose.position.x = current_odometry.pose.pose.position.y - 0.1; 
+                    vel.twist.linear.y += 0;  
 
                 }else{if(data["objects"][0]["detection"]["bounding_box"]["x_min"]<0.1){  
-                    pose.pose.position.x = current_odometry.pose.pose.position.y + 0.1; 
+                    vel.twist.linear.y += -0;  
 
                     }
                 }
 
-                local_pos_pub.publish(pose);
+                vel_pub.publish(vel); 
 
             }
         }
+
+        pose.pose.position.x = 0; //std::round(current_odometry.pose.pose.position.x * 10) / 10.0; 
+        pose.pose.position.y = 0; //std::round(current_odometry.pose.pose.position.y * 10) / 10.0;
+        pose.pose.position.z = 2;
+
+        local_pos_pub.publish(pose);
 
         ros::spinOnce();
         rate.sleep();
