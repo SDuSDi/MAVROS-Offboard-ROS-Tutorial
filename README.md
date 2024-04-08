@@ -1,7 +1,7 @@
 # MAVROS Offboard ROS Tutorial
 
 <!-- This Project contains my hopes and dreams. Please, save them. -->
-This project contains the code for offboard control made using the ROS/MAVROS tutorial found on PX4 website's.
+This project contains the code for offboard control made during my curricular end-of-studies intership at CATEC using the ROS/MAVROS tutorial found on PX4 website's.
 
 ![image](assets/iris_pocho.png)
 ![image](assets/schema.png)
