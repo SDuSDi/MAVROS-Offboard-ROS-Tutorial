@@ -80,9 +80,10 @@ If you want to build a docker image with this code that contains everything nece
 ```
 docker build -t braismtnez/mavros .
 ```
-To use said docker image, run the following command. The program should show on startup.
+To use said docker image, run the following commands. The program should show a simulation and ground station on startup.
 ```
-docker run -it --rm --privileged --net=host --volume /tmp/.X11-unix:/tmp/.X11-unix:rw --volume $XAUTHORITY:$XAUTHORITY --env QT_X11_NO_MITSHM=1 --env DISPLAY=$DISPLAY --env XAUTHORITY=$XAUTHORITY braismtnez/mavros
+xhost +local:root
+docker run -it --rm --privileged --net=host --env DISPLAY=$DISPLAY braismtnez/mavros
 ```
 
 ## Diving Deeper
