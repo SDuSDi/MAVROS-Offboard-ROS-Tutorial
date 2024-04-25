@@ -24,4 +24,6 @@ windows:
       layout: tiled
       panes: # launch ROS Offboard Node
         - sleep 6; rosrun mavrostutorial node
+        - sleep 6; rostopic echo /mavros/setpoin_velocity/cmd_vel
         - 
+        - sleep 6; rostopic echo /mavros/odometry/in
